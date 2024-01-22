@@ -32,8 +32,8 @@ create_plot <- function(data, max_year_line) {
 }
 
 # Base directory and model types
-base_dir <- "X:/Cosmo/projects/ForesiteExplorer/outputs/debug/delay/"
-model_types <- c("PyNets", "PyPyroNets", "PyPBONets")
+base_dir <- "X:/Cosmo/projects/ForesiteExplorer/outputs/debug/current/"
+model_types <- c("PyNets", "PyPyroNets")#, "PyPBONets")
 
 # Process, aggregate and combine datasets for each model type
 all_data <- map(model_types, function(model_type) {

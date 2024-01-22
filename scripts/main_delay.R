@@ -124,27 +124,27 @@ filter_and_update_interventions <- function(site_data, net_data, select_years) {
 
 expand_interventions <- function(site_data, expand_year, padding) {
     max_year <- max(site_data$interventions$year)
-    year = max_year
-    # Filter for rural areas and find the last row for each region
-    last_row_by_region <- site_data %>%
-    group_by(name_1) %>%
-    slice(which.max(year)) %>%
-    ungroup()  # Ungroup to prevent group-related issues in subsequent operations
+    # year = max_year
+    # # Filter for rural areas and find the last row for each region
+    # last_row_by_region <- site_data %>%
+    # group_by(name_1) %>%
+    # slice(which.max(year)) %>%
+    # ungroup()  # Ungroup to prevent group-related issues in subsequent operations
 
-    if (padding > 0) {
-    for (region in unique(last_row_by_region$name_1)) {
-        # Extract the last row for the current region
-        last_row <- last_row_by_region[last_row_by_region$name_1 == region, ]
-        max_year_region <- max(last_row$year)
+    # if (padding > 0) {
+    # for (region in unique(last_row_by_region$name_1)) {
+    #     # Extract the last row for the current region
+    #     last_row <- last_row_by_region[last_row_by_region$name_1 == region, ]
+    #     max_year_region <- max(last_row$year)
 
-        # Copy the last row 'padding' times for the current region
-        for (p in 1:padding) {
-        padded_row <- last_row
-        padded_row$year <- max_year_region + p
-        site_data$interventions <- rbind(site_data$interventions, padded_row)
-        }
-    }
-    }
+    #     # Copy the last row 'padding' times for the current region
+    #     for (p in 1:padding) {
+    #     padded_row <- last_row
+    #     padded_row$year <- max_year_region + p
+    #     site_data$interventions <- rbind(site_data$interventions, padded_row)
+    #     }
+    # }
+    # }
 
   # Original logic from here onwards, adjusted to start from max_year
 #   ridx <- which(site_data$interventions$year == max_year)
@@ -232,8 +232,8 @@ return(site_data)
 
 setwd("X:/Cosmo")
 
-debug = TRUE
-parallel = TRUE
+debug = FALSE
+parallel = FALSE
 padding <- 0
 expand_year <- 5
 if (padding > 0) method = "delay" else method = "current"
@@ -283,8 +283,8 @@ if (debug) {
 
 } else {
     output_dir = "final"
-    human_population = 500#100000
-    iso_codes <- c("MLI", "NER")
+    human_population = 15000#100000
+    iso_codes <- c("NER")
     net_types <- list(
     PyNets = read.csv(
         "X:/Cosmo/projects/ForesiteExplorer/data/pyrethroid_only_nets.csv"),
