@@ -216,7 +216,7 @@ expand_interventions <- function(site_data, expand_year, delay) {
         site_data$interventions[update_start:update_end, "year"] + delay
     }
   }
-browser()
+
   # Return the modified site_data
   return(site_data)
 
@@ -224,10 +224,11 @@ browser()
 }
 setwd("D:/Malaria")
 
-debug = TRUE
+debug = FALSE
 parallel = TRUE
+if (parallel) plan(multisession, workers = 20)
 expand_year <- 5
-delay <- 3
+delay <- 0
 
 if (delay > 0 ) method = "delay" else method = "current"
 
@@ -276,7 +277,7 @@ if (debug) {
 
 } else {
     output_dir = "final"
-    human_population = 15000#100000
+    human_population = 1500#100000
     iso_codes <- c("MLI", "NER")
     net_types <- list(
     PyNets = read.csv(
