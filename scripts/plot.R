@@ -1,67 +1,64 @@
-# Load libraries
+# Load Libraries
 library(ggplot2)
-library(dplyr)
-library(tidyr)
-library(purrr) # for map functions
 
-# Function to read and preprocess a dataset
-preprocess_data <- function(file_path, source_label) {
-  readRDS(file_path) %>%
-    select(timestep, n_inc_clinical_1825_5474) %>%
-    mutate(timestep = floor((timestep / 365.25) + 2000),  # Convert days to whole years
-           net_types = source_label)  # Label the net_types
+# Configuration and Constants
+debug <- TRUE
+delay <- 0
+iso <- "NER"
+environment_label <- ifelse(debug, "debug", "final")
+plot_base_dir <- "D:/Malaria/ForesiteExplorer/outputs/figs/"
+plot_dir <- paste0(plot_base_dir, environment_label, "/")
+post_dir <- paste0("D:/Malaria/ForesiteExplorer/outputs/post/", environment_label, "/")
+
+# Ensure the plot directory exists
+if (!dir.exists(plot_dir)) {
+  dir.create(plot_dir, recursive = TRUE)
 }
 
-# Function to aggregate data at the XXX level and by year
-aggregate_data <- function(data) {
-  data %>%
-    group_by(timestep, net_types) %>%
-    summarise(n_inc_clinical_1825_5474 = sum(n_inc_clinical_1825_5474, na.rm = TRUE)) %>%
-    ungroup()
-}
-
-# Function to create the plot
-create_plot <- function(data, max_year_line) {
-  ggplot(data, aes(x = timestep, y = n_inc_clinical_1825_5474, color = net_types)) +
+# Plotting Function
+create_plot <- function(data, max_year_line, iso, environment_label, method_label) {
+  plot <- ggplot(data, aes(x = timestep, y = n_inc_clinical_1825_5474, color = net_types)) +
     geom_line() +
     geom_vline(xintercept = max_year_line, linetype = "dashed", color = "black") +
     geom_vline(xintercept = max_year_line + delay, linetype = "dashed", color = "black") +
-    scale_x_continuous(breaks = floor(min(data$timestep)):ceiling(max(data$timestep))) + # X-axis ticks for each year
+    scale_x_continuous(breaks = floor(min(data$timestep)):ceiling(max(data$timestep))) +
     labs(x = "Time (years)", y = "Incidence", title = "Incidence (5 - 15)") +
     theme_minimal() +
-    theme(axis.text.x = element_text(angle = 45, hjust = 1)) # Angle the x-axis text
+    theme(axis.text.x = element_text(angle = 45, hjust = 1))
+  
+  # Construct the filename
+  plot_filename <- paste0(plot_dir, iso, "_", environment_label, "_", method_label, "_incidence_plot.png")
+  
+  # Save the plot
+  ggsave(filename = plot_filename, plot = plot, bg = "white", width = 10, height = 8)
 }
 
-delay <- 3
-if (delay > 0) base_dir = "D:/Malaria/ForesiteExplorer/outputs/raw/debug/delay/" else {
-  base_dir = "D:/Malaria/ForesiteExplorer/outputs/raw/debug/current/"
+# Main Execution Logic
+if (delay > 0) method_preference = "delay"  else method_preference = "current"# Set to "current" or "delay" as per your need
+processed_files <- list.files(
+  post_dir,
+  pattern = paste0("post_model_output_", iso, "_", environment_label, "_", method_preference, "_.*\\.RDS$"),
+  full.names = TRUE
+)
+
+if (length(processed_files) == 0) {
+  stop(paste("No processed data files found for the specified ISO and method preference:", method_preference))
 }
-# Base directory and model types
 
-model_types <- c("PyNets", "PyPyroNets", "PyPBONets")
-
-# Process, aggregate and combine datasets for each model type
-all_data <- map(model_types, function(model_type) {
-  # List RDS files in the directory
-
-  files <- list.files(path = paste0(base_dir, model_type, "/NER/"), pattern = "*.RDS", full.names = TRUE)
-
-  # Process each dataset
-  datasets <- lapply(files, function(file_path) {
-    preprocess_data(file_path, model_type)
-  }) %>% bind_rows()
-
-  # Aggregate data
-  aggregate_data(datasets)
-})
-
-# Combine all data
-combined_data <- bind_rows(all_data)
-
-# Load site_data and define max_year (assuming you have foresite package and its functions available)
-iso = "NER"
-site_data <- foresite:::get_site(iso)
-max_year <- max(site_data$interventions$year)
-
-# Create and display the plot
-create_plot(combined_data, max_year - 1)
+for (file_path in processed_files) {
+    # Extract details from filename
+    filename_parts <- strsplit(basename(file_path), "_")[[1]]
+    iso <- filename_parts[4]
+    environment_label <- filename_parts[5]
+    method_label <- filename_parts[6]
+    metric_label <- filename_parts[7]
+    metric_label <- gsub("\\.RDS$", "", metric_label)  # Remove the .RDS extension
+    
+    # Load the processed data
+    combined_data <- readRDS(file_path)
+    site_data <- foresite:::get_site(iso)
+    max_year <- max(site_data$interventions$year)
+    
+    # Generate and Save the Plot
+    create_plot(combined_data, max_year - 1, iso, environment_label, method_label)
+}
