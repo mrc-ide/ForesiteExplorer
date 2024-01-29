@@ -2,8 +2,8 @@
 library(ggplot2)
 
 # Configuration and Constants
-debug <- TRUE
-delay <- 0
+debug <- FALSE
+delay <- 3
 iso <- "NER"
 environment_label <- ifelse(debug, "debug", "final")
 plot_base_dir <- "D:/Malaria/ForesiteExplorer/outputs/figs/"

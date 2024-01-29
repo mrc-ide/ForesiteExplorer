@@ -4,9 +4,9 @@ library(tidyr)
 library(purrr) # for map functions
 
 # Configuration and Constants
-debug <- TRUE
+debug <- FALSE
 expand_year <- 5
-delay <- 0
+delay <- 3
 iso <- "NER"
 environment_label <- ifelse(debug, "debug", "final")
 method_label <- ifelse(delay > 0, "delay", "current")

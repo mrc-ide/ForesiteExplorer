@@ -226,13 +226,13 @@ expand_interventions <- function(site_data, expand_year, delay) {
 
 # Configuration and Constants
 setwd("D:/Malaria")
-debug <- TRUE
+debug <- FALSE
 parallel <- TRUE
 expand_year <- 5
 delay <- 3
 output_dir <- ifelse(debug, "debug", "final")
-human_population <- 15000 # Replace with 100000 if needed
-iso_codes <- ifelse(debug, c("NER"), c("MLI", "NER"))
+human_population <- 150000 # Replace with 100000 if needed
+if (debug) iso_codes <- c("NER") else iso_codes <- c("NER")#, "MLI")
 method <- ifelse(delay > 0, "delay", "current")
 net_files <- c("pyrethroid_only_nets.csv", "pyrethroid_pyrrole_nets.csv", "pyrethroid_pbo_nets.csv")
 net_names <- c("PyNets", "PyPyroNets", "PyPBONets")
