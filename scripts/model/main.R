@@ -8,6 +8,8 @@ library(remotes)
 library(drat)
 library(furrr)
 
+source("scripts/utils/utils.R")
+
 # Function to prepare input data for a single site
 prep_single_site_data <- function(site_data, site_index) {
   site <- site::single_site(site_data, index = site_index)
@@ -184,8 +186,22 @@ adjust_row_indices <- function(ridx, num_added_rows, length_ri) {
   ridx + (num_added_rows) * 0:(length_ri - 1)
 }
 
+counterfactual_replacement <- function(interventions, counterfactual) {
+  if (!counterfactual) {
+    return(interventions)
+  }
+
+  interventions %>%
+    dplyr::mutate(
+      dn0 = ifelse(counterfactual, 0.0, dn0),
+      rn0 = ifelse(counterfactual, 0.0, rn0),
+      gamman = ifelse(counterfactual, 0.0, gamman),
+      pyrethroid_resistance = ifelse(counterfactual, 0.0, pyrethroid_resistance)
+    )
+}
+
 # Main Function
-expand_interventions <- function(site_data, expand_year, delay) {
+expand_interventions <- function(site_data, expand_year, delay, counterfactual) {
   max_year <- max(site_data$interventions$year)
   ridx <- which(site_data$interventions$year == max_year)
   updateridx <- adjust_row_indices(ridx, expand_year, length(ridx))
@@ -220,20 +236,30 @@ expand_interventions <- function(site_data, expand_year, delay) {
     }
   }
 
+  site_data$interventions <- counterfactual_replacement(site_data$interventions, counterfactual)
   return(site_data)
-}
 
+}
 
 # Configuration and Constants
 setwd("D:/Malaria")
 debug <- FALSE
 parallel <- TRUE
-expand_year <- 5
-delay <- 3
+counterfactual <- TRUE
+if (parallel) workers = 22 else workers = 1
+expand_year <- 1
+delay <- 0
 output_dir <- ifelse(debug, "debug", "final")
-human_population <- 150000 # Replace with 100000 if needed
+if (debug) human_population = 1500 else human_population = 150000
 if (debug) iso_codes <- c("NER") else iso_codes <- c("NER")#, "MLI")
-method <- ifelse(delay > 0, "delay", "current")
+
+# Determine method based on counterfactual and delay
+if (counterfactual) {
+    method <- "counterfactual"
+} else {
+    method <- ifelse(delay > 0, "delay", "current")
+}
+
 net_files <- c("pyrethroid_only_nets.csv", "pyrethroid_pyrrole_nets.csv", "pyrethroid_pbo_nets.csv")
 net_names <- c("PyNets", "PyPyroNets", "PyPBONets")
 folder_base <- paste0("D:/Malaria/ForesiteExplorer/outputs/raw/", output_dir, "/", method, "/")
@@ -241,7 +267,7 @@ folder_base <- paste0("D:/Malaria/ForesiteExplorer/outputs/raw/", output_dir, "/
 # Initialize Environment
 initialize_environment <- function() {
     if (parallel) {
-        plan(multisession, workers = 20)
+        plan(multisession, workers = workers)
     }
 }
 
@@ -264,8 +290,8 @@ run_model_for_country <- function(iso, folder_base, net_data, expand_year) {
     select_years <- max(site_data$interventions$year)
     
     site_data <- filter_and_update_interventions(site_data, net_data, select_years)
-    site_data <- expand_interventions(site_data, expand_year, delay)
-    
+    site_data <- expand_interventions(site_data, expand_year, delay, counterfactual)
+
     output <- prep_inputs(site_data)
     
     if (parallel) {
@@ -294,7 +320,6 @@ execute_models <- function() {
         }))
     }))
 }
-
 
 # Script Execution
 initialize_environment()

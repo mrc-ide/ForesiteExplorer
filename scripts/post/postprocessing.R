@@ -4,12 +4,18 @@ library(tidyr)
 library(purrr) # for map functions
 
 # Configuration and Constants
-debug <- FALSE
-expand_year <- 5
-delay <- 3
+debug <- TRUE
+expand_year <- 1
+delay <- 0
+counterfactual <- TRUE
 iso <- "NER"
 environment_label <- ifelse(debug, "debug", "final")
-method_label <- ifelse(delay > 0, "delay", "current")
+# Determine method based on counterfactual and delay
+if (counterfactual) {
+    method_label <- "counterfactual"
+} else {
+    method_label <- ifelse(delay > 0, "delay", "current")
+}
 base_dir <- paste0("D:/Malaria/ForesiteExplorer/outputs/raw/", environment_label, "/")
 method_dir <- paste0(base_dir, method_label, "/")
 post_dir <- paste0("D:/Malaria/ForesiteExplorer/outputs/post/", environment_label, "/")
