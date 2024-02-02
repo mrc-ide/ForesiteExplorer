@@ -193,10 +193,9 @@ counterfactual_replacement <- function(interventions, counterfactual) {
 
   interventions %>%
     dplyr::mutate(
-      dn0 = ifelse(counterfactual, 0.0, dn0),
-      rn0 = ifelse(counterfactual, 0.0, rn0),
-      gamman = ifelse(counterfactual, 0.0, gamman),
-      pyrethroid_resistance = ifelse(counterfactual, 0.0, pyrethroid_resistance)
+      dn0 = ifelse(counterfactual, 0.541979954, dn0),
+      rn0 = ifelse(counterfactual, 0.456350279, rn0),
+      gamman = ifelse(counterfactual, 2.64, gamman)
     )
 }
 
@@ -245,21 +244,37 @@ expand_interventions <- function(site_data, expand_year, delay, counterfactual) 
 setwd("D:/Malaria")
 debug <- FALSE
 parallel <- TRUE
-counterfactual <- TRUE
-if (parallel) workers = 22 else workers = 1
-expand_year <- 1
-delay <- 0
-output_dir <- ifelse(debug, "debug", "final")
-if (debug) human_population = 1500 else human_population = 150000
-if (debug) iso_codes <- c("NER") else iso_codes <- c("NER")#, "MLI")
 
-# Determine method based on counterfactual and delay
-if (counterfactual) {
-    method <- "counterfactual"
-} else {
-    method <- ifelse(delay > 0, "delay", "current")
+# Mode Settings
+mode <- "delay" # Set mode to "current", "delay", or "counterfactual"
+
+# Apply mode-specific settings
+
+# Mode Settings Function
+get_mode_settings <- function(mode) {
+  switch(mode,
+    "current" = list(expand_year = 1, delay = 0, counterfactual = FALSE),
+    "delay" = list(expand_year = 5, delay = 3, counterfactual = FALSE),
+    "counterfactual" = list(expand_year = 1, delay = 0, counterfactual = TRUE),
+    stop("Invalid mode specified")
+  )
 }
 
+
+method <- mode
+
+# Parallel and Debug Settings
+if (parallel) workers = 22 else workers = 1
+output_dir <- ifelse(debug, "debug", "final")
+if (debug) {
+  human_population = 1500
+  iso_codes <- c("NER")
+} else {
+  human_population = 150000
+  iso_codes <- c("NER") # Add additional ISO codes as required
+}
+
+# File and Folder Paths
 net_files <- c("pyrethroid_only_nets.csv", "pyrethroid_pyrrole_nets.csv", "pyrethroid_pbo_nets.csv")
 net_names <- c("PyNets", "PyPyroNets", "PyPBONets")
 folder_base <- paste0("D:/Malaria/ForesiteExplorer/outputs/raw/", output_dir, "/", method, "/")
@@ -306,20 +321,43 @@ run_model_for_country <- function(iso, folder_base, net_data, expand_year) {
 # Main Execution Logic
 execute_models <- function() {
     net_types <- read_net_data()
-    
-    invisible(lapply(names(net_types), function(net_name) {
+
+    # Adjust net types based on the mode
+    net_names_to_use <- if (counterfactual) {
+        # Use only PyNets for counterfactual and don't create a sub-folder for net types
+        names(net_types)[names(net_types) == "PyNets"]
+    } else {
+        # Use all net types otherwise and create sub-folders for each
+        names(net_types)
+    }
+
+    invisible(lapply(net_names_to_use, function(net_name) {
         net_data <- net_types[[net_name]]
-        folder_net_type <- paste0(folder_base, net_name, "/")
-        create_directory(folder_net_type)
-        
+
+        # Adjust folder structure based on counterfactual setting
+        if (counterfactual) {
+            # When counterfactual is true, no sub-folder for net types
+            folder_net_type <- folder_base
+        } else {
+            # When counterfactual is false, create sub-folder for each net type
+            folder_net_type <- paste0(folder_base, net_name, "/")
+            create_directory(folder_net_type)
+        }
+
         invisible(lapply(iso_codes, function(iso) {
-            folder_iso <- paste0(folder_net_type, iso, "/")
+            # Adjust folder structure based on counterfactual setting
+            if (counterfactual) {
+                folder_iso <- paste0(folder_net_type, iso, "/")
+            } else {
+                folder_iso <- paste0(folder_net_type, iso, "/")
+            }
             create_directory(folder_iso)
-            
+
             run_model_for_country(iso, folder_iso, net_data, expand_year)
         }))
     }))
 }
+
 
 # Script Execution
 initialize_environment()
