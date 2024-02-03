@@ -4,19 +4,19 @@ library(tidyr)
 library(purrr)
 
 # Configuration and Constants
-debug <- FALSE
+debug <- TRUE
 iso <- "NER"
 environment_label <- ifelse(debug, "debug", "final")
-measure_type <- "prevalence"  # Set to "incidence" or "prevalence"
-mode <- "counterfactual"      # Set to "current", "delay", or "counterfactual"
+measure_type <- "incidence"  # Set to "incidence" or "prevalence"
+mode <- "current"      # Set to "current", "delay", or "counterfactual"
 model_types <- c("PyNets", "PyPyroNets", "PyPBONets")
 
 # Mode Settings Function
 get_mode_settings <- function(mode) {
   switch(mode,
-    "current" = list(expand_year = 1, delay = 0, counterfactual = FALSE),
+    "current" = list(expand_year = 5, delay = 0, counterfactual = FALSE),
     "delay" = list(expand_year = 5, delay = 3, counterfactual = FALSE),
-    "counterfactual" = list(expand_year = 1, delay = 0, counterfactual = TRUE),
+    "counterfactual" = list(expand_year = 5, delay = 0, counterfactual = TRUE),
     stop("Invalid mode specified")
   )
 }
@@ -26,7 +26,7 @@ mode_settings <- get_mode_settings(mode)
 
 # Directory Paths
 get_directory_paths <- function(environment_label, method_label) {
-  base_dir <- paste0("D:/Malaria/ForesiteExplorer/outputs/raw/", environment_label, "/")
+  base_dir <- paste0("D:/Malaria/ForesiteExplorer/outputs/raw-sim/", environment_label, "/")
   method_dir <- paste0(base_dir, method_label, "/")
   post_dir <- paste0("D:/Malaria/ForesiteExplorer/outputs/post/", environment_label, "/")
   list(base_dir = base_dir, method_dir = method_dir, post_dir = post_dir)
