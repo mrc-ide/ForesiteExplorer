@@ -236,30 +236,39 @@ expand_interventions <- function(site_data, expand_year, delay, counterfactual) 
   }
 
   site_data$interventions <- counterfactual_replacement(site_data$interventions, counterfactual)
+  ## TODO
+  ## Save and return site_data as RDS under pre-sim
   return(site_data)
 
 }
 
 # Configuration and Constants
 setwd("D:/Malaria")
-debug <- FALSE
+debug <- TRUE
 parallel <- TRUE
 
 # Mode Settings
 mode <- "delay" # Set mode to "current", "delay", or "counterfactual"
 
 # Apply mode-specific settings
-
-# Mode Settings Function
-get_mode_settings <- function(mode) {
-  switch(mode,
-    "current" = list(expand_year = 1, delay = 0, counterfactual = FALSE),
-    "delay" = list(expand_year = 5, delay = 3, counterfactual = FALSE),
-    "counterfactual" = list(expand_year = 1, delay = 0, counterfactual = TRUE),
-    stop("Invalid mode specified")
-  )
-}
-
+switch(mode,
+  "current" = {
+    expand_year <- 5     # Set your desired expand_year for "current" mode
+    delay <- 0
+    counterfactual <- FALSE
+  },
+  "delay" = {
+    expand_year <- 5     # Set your desired expand_year for "delay" mode
+    delay <- 3           # Set your desired delay for "delay" mode
+    counterfactual <- FALSE
+  },
+  "counterfactual" = {
+    expand_year <- 5
+    delay <- 0
+    counterfactual <- TRUE
+  },
+  stop("Invalid mode specified")
+)
 
 method <- mode
 
@@ -277,7 +286,7 @@ if (debug) {
 # File and Folder Paths
 net_files <- c("pyrethroid_only_nets.csv", "pyrethroid_pyrrole_nets.csv", "pyrethroid_pbo_nets.csv")
 net_names <- c("PyNets", "PyPyroNets", "PyPBONets")
-folder_base <- paste0("D:/Malaria/ForesiteExplorer/outputs/raw/", output_dir, "/", method, "/")
+folder_base <- paste0("D:/Malaria/ForesiteExplorer/outputs/raw-sim/", output_dir, "/", method, "/")
 
 # Initialize Environment
 initialize_environment <- function() {
