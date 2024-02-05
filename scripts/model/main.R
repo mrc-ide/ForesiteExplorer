@@ -26,7 +26,7 @@ mode <- "counterfactual" # Set mode to "current", "delay", or "counterfactual"
 mode_settings <- get_mode_settings(mode)
 
 # Parallel and Debug Settings
-workers <- if(parallel) 22 else 1
+workers <- if(parallel) 6 else 1
 output_dir <- ifelse(debug, "debug", "final")
 human_population <- if(debug) 1500 else 150000
 iso_codes <- c("NER") # Add additional ISO codes as required
